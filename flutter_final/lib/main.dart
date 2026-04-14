@@ -16,8 +16,14 @@ class MyApp extends StatelessWidget {
           child: Column(
             children: [
               Icon(Icons.check_circle_outline, size: 100,),
-              Text("No Tasks Yet"),
-              Text("Tap + to add your first task"),
+              Text(
+                  "No Tasks Yet",
+                style: TextStyle(fontSize: 22)
+              ),
+              Text(
+                  "Tap + to add your first task",
+                style: TextStyle(fontSize: 16)
+              ),
               FloatingActionButton(
                   onPressed: () {
                     print("Button Clicked");

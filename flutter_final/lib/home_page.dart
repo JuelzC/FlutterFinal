@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'task_card.dart';
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});
@@ -12,58 +13,21 @@ class HomePage extends StatelessWidget {
       ),
 
       body: Column(
-        mainAxisAlignment: MainAxisAlignment.start,
-        children: [
-          // Task 1
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: const [
-              Icon(Icons.check_circle_outline),
-              Expanded(
-                child: Text(
-                  "Finish homework",
-                  style: TextStyle(fontSize: 18),
-                ),
-              ),
-              Text("Apr 15"),
-            ],
+        children: const [
+          TaskCard(
+            title: "Finish homework",
+            date: "Apr 15",
+            priorityColor: Colors.green,
           ),
-
-          SizedBox(height: 20),
-
-          // Task 2
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: const [
-              Icon(Icons.check_circle_outline),
-              Expanded(
-                child: Text(
-                  "Walk the dog",
-                  style: TextStyle(fontSize: 18),
-                ),
-              ),
-              Text("Apr 16"),
-            ],
+          TaskCard(
+            title: "Walk the dog",
+            date: "Apr 16",
+            priorityColor: Colors.amber,
           ),
-
-          SizedBox(height: 20),
-
-          // Task 3
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            crossAxisAlignment: CrossAxisAlignment.center,
-            children: const [
-              Icon(Icons.check_circle_outline),
-              Expanded(
-                child: Text(
-                  "Clean room",
-                  style: TextStyle(fontSize: 18),
-                ),
-              ),
-              Text("Apr 17"),
-            ],
+          TaskCard(
+            title: "Clean room",
+            date: "Apr 17",
+            priorityColor: Colors.red,
           ),
         ],
       ),

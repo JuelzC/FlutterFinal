@@ -1,11 +1,26 @@
 import 'package:flutter/material.dart';
-import 'task.dart';
-import 'task_card.dart';
+import 'package:flutter_final/task.dart';
+import 'package:flutter_final/task_card.dart';
+import 'package:flutter_final/add_task_page.dart';
 
-class HomePage extends StatelessWidget {
-  HomePage({super.key});
+class HomePage extends StatefulWidget {
+  const HomePage({super.key});
 
-  final List<Task> tasks = [
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  int _selectedIndex = 0;
+
+  void _onItemTapped(int index) {
+    setState(() {
+      _selectedIndex = index;
+    });
+    print("Page Transitioned");
+  }
+
+  List<Task> tasks = [
     Task(
       id: 1,
       title: "Finish homework",
@@ -79,6 +94,41 @@ class HomePage extends StatelessWidget {
         title: const Text("TaskFlow"),
         backgroundColor: Colors.teal,
       ),
+      drawer: Drawer(
+        child: ListView(
+          padding: EdgeInsets.zero,
+          children: [
+            const DrawerHeader(
+              decoration: BoxDecoration(
+                color: Colors.teal,
+              ),
+              child: Text("TaskFlow"),
+            ),
+            ListTile(
+              leading: Icon(Icons.person_outline),
+              title: Text("Sign Out"),
+              onTap: () {
+                print("Signed out");
+              }
+            ),
+        ],
+        ),
+      ),
+      floatingActionButton: FloatingActionButton(
+          onPressed: () async {
+            final newTask = await Navigator.push(
+                context,
+                MaterialPageRoute(builder: (context) => const AddTaskPage())
+            );
+
+            if (newTask != null && newTask is Task) {
+              setState(() {
+                tasks.add(newTask);
+              });
+            }
+          },
+          child: const Icon(Icons.add)
+      ),
 
       body: Column(
         children: [
@@ -134,6 +184,24 @@ class HomePage extends StatelessWidget {
                 );
               },
             ),
+          ),
+        ],
+      ),
+      bottomNavigationBar: BottomNavigationBar(
+        currentIndex: _selectedIndex,
+        onTap: _onItemTapped,
+        items: const [
+          BottomNavigationBarItem(
+            label: "Tasks",
+            icon: Icon(Icons.task),
+          ),
+          BottomNavigationBarItem(
+            label: "Categories",
+            icon: Icon(Icons.category),
+          ),
+          BottomNavigationBarItem(
+            label: "Profile",
+            icon: Icon(Icons.person_outlined),
           ),
         ],
       ),

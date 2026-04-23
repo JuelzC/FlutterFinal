@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_final/task.dart';
 import 'package:flutter_final/task_card.dart';
 import 'package:flutter_final/add_task_page.dart';
+import 'package:flutter_final/task_detail_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -94,6 +95,7 @@ class _HomePageState extends State<HomePage> {
         title: const Text("TaskFlow"),
         backgroundColor: Colors.teal,
       ),
+
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
@@ -105,29 +107,32 @@ class _HomePageState extends State<HomePage> {
               child: Text("TaskFlow"),
             ),
             ListTile(
-              leading: Icon(Icons.person_outline),
-              title: Text("Sign Out"),
+              leading: const Icon(Icons.person_outline),
+              title: const Text("Sign Out"),
               onTap: () {
                 print("Signed out");
-              }
+              },
             ),
-        ],
+          ],
         ),
       ),
-      floatingActionButton: FloatingActionButton(
-          onPressed: () async {
-            final newTask = await Navigator.push(
-                context,
-                MaterialPageRoute(builder: (context) => const AddTaskPage())
-            );
 
-            if (newTask != null && newTask is Task) {
-              setState(() {
-                tasks.add(newTask);
-              });
-            }
-          },
-          child: const Icon(Icons.add)
+      floatingActionButton: FloatingActionButton(
+        onPressed: () async {
+          final newTask = await Navigator.push(
+            context,
+            MaterialPageRoute(
+              builder: (context) => const AddTaskPage(),
+            ),
+          );
+
+          if (newTask != null && newTask is Task) {
+            setState(() {
+              tasks.add(newTask);
+            });
+          }
+        },
+        child: const Icon(Icons.add),
       ),
 
       body: Column(
@@ -164,29 +169,58 @@ class _HomePageState extends State<HomePage> {
               itemBuilder: (context, index) {
                 final task = tasks[index];
 
-                return Stack(
-                  children: [
-                    TaskCard(
-                      title: task.title,
-                      date: task.dueDate,
-                      priorityColor: task.priorityColor,
-                    ),
-
-                    if (task.isCompleted)
-                      const Positioned(
-                        top: 10,
-                        right: 20,
-                        child: Icon(
-                          Icons.check_circle,
+                return Dismissible(
+                  key: Key(task.id.toString()),
+                  onDismissed: (direction) {
+                    setState(() {
+                      tasks.removeAt(index);
+                    });
+                  },
+                  child: GestureDetector(
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) =>
+                              TaskDetailPage(task: task),
                         ),
-                      ),
-                  ],
+                      );
+                    },
+                    child: Stack(
+                      children: [
+                        TaskCard(
+                          title: task.title,
+                          date: task.dueDate,
+                          priorityColor: task.priorityColor,
+                        ),
+
+                        Positioned(
+                          top: 10,
+                          right: 20,
+                          child: IconButton(
+                            icon: Icon(
+                              task.isCompleted
+                                  ? Icons.check_circle
+                                  : Icons.circle_outlined,
+                            ),
+                            onPressed: () {
+                              setState(() {
+                                task.isCompleted =
+                                !task.isCompleted;
+                              });
+                            },
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
                 );
               },
             ),
           ),
         ],
       ),
+
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,

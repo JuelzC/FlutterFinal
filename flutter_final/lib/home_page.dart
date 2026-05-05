@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_final/task.dart';
-import 'package:flutter_final/task_card.dart';
-import 'package:flutter_final/add_task_page.dart';
-import 'package:flutter_final/task_detail_page.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+
+import 'task.dart';
+import 'task_card.dart';
+import 'add_task_page.dart';
+import 'task_detail_page.dart';
 
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
@@ -18,75 +20,7 @@ class _HomePageState extends State<HomePage> {
     setState(() {
       _selectedIndex = index;
     });
-    print("Page Transitioned");
   }
-
-  List<Task> tasks = [
-    Task(
-      id: 1,
-      title: "Finish homework",
-      category: "School",
-      dueDate: "Apr 15",
-      priorityColor: Colors.green,
-      isCompleted: false,
-    ),
-    Task(
-      id: 2,
-      title: "Walk the dog",
-      category: "Personal",
-      dueDate: "Apr 16",
-      priorityColor: Colors.amber,
-      isCompleted: true,
-    ),
-    Task(
-      id: 3,
-      title: "Clean room",
-      category: "Home",
-      dueDate: "Apr 17",
-      priorityColor: Colors.red,
-      isCompleted: false,
-    ),
-    Task(
-      id: 4,
-      title: "Study Flutter",
-      category: "School",
-      dueDate: "Apr 18",
-      priorityColor: Colors.red,
-      isCompleted: false,
-    ),
-    Task(
-      id: 5,
-      title: "Read manga",
-      category: "Fun",
-      dueDate: "Apr 19",
-      priorityColor: Colors.blue,
-      isCompleted: false,
-    ),
-    Task(
-      id: 6,
-      title: "Buy groceries",
-      category: "Personal",
-      dueDate: "Apr 20",
-      priorityColor: Colors.amber,
-      isCompleted: false,
-    ),
-    Task(
-      id: 7,
-      title: "Workout",
-      category: "Health",
-      dueDate: "Apr 21",
-      priorityColor: Colors.green,
-      isCompleted: true,
-    ),
-    Task(
-      id: 8,
-      title: "Finish app",
-      category: "Work",
-      dueDate: "Apr 22",
-      priorityColor: Colors.red,
-      isCompleted: false,
-    ),
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -101,9 +35,7 @@ class _HomePageState extends State<HomePage> {
           padding: EdgeInsets.zero,
           children: [
             const DrawerHeader(
-              decoration: BoxDecoration(
-                color: Colors.teal,
-              ),
+              decoration: BoxDecoration(color: Colors.teal),
               child: Text("TaskFlow"),
             ),
             ListTile(
@@ -118,25 +50,20 @@ class _HomePageState extends State<HomePage> {
       ),
 
       floatingActionButton: FloatingActionButton(
-        onPressed: () async {
-          final newTask = await Navigator.push(
+        onPressed: () {
+          Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => const AddTaskPage(),
             ),
           );
-
-          if (newTask != null && newTask is Task) {
-            setState(() {
-              tasks.add(newTask);
-            });
-          }
         },
         child: const Icon(Icons.add),
       ),
 
       body: Column(
         children: [
+          // 🔹 Category chips (still UI only for now)
           SizedBox(
             height: 60,
             child: ListView(
@@ -162,58 +89,60 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
 
+          // 🔥 FIREBASE STREAM START
           Expanded(
-            child: ListView.separated(
-              itemCount: tasks.length,
-              separatorBuilder: (context, index) => const Divider(),
-              itemBuilder: (context, index) {
-                final task = tasks[index];
+            child: StreamBuilder(
+              stream: FirebaseFirestore.instance
+                  .collection('tasks')
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (!snapshot.hasData) {
+                  return const Center(
+                    child: CircularProgressIndicator(),
+                  );
+                }
 
-                return Dismissible(
-                  key: Key(task.id.toString()),
-                  onDismissed: (direction) {
-                    setState(() {
-                      tasks.removeAt(index);
-                    });
-                  },
-                  child: GestureDetector(
-                    onTap: () {
-                      Navigator.push(
-                        context,
-                        MaterialPageRoute(
-                          builder: (context) =>
-                              TaskDetailPage(task: task),
-                        ),
-                      );
-                    },
-                    child: Stack(
-                      children: [
-                        TaskCard(
-                          title: task.title,
-                          date: task.dueDate,
-                          priorityColor: task.priorityColor,
-                        ),
+                final docs = snapshot.data!.docs;
 
-                        Positioned(
-                          top: 10,
-                          right: 20,
-                          child: IconButton(
-                            icon: Icon(
-                              task.isCompleted
-                                  ? Icons.check_circle
-                                  : Icons.circle_outlined,
-                            ),
-                            onPressed: () {
-                              setState(() {
-                                task.isCompleted =
-                                !task.isCompleted;
-                              });
-                            },
+                if (docs.isEmpty) {
+                  return const Center(
+                    child: Text("No tasks yet"),
+                  );
+                }
+
+                return ListView.separated(
+                  itemCount: docs.length,
+                  separatorBuilder: (context, index) =>
+                  const Divider(height: 0),
+                  itemBuilder: (context, index) {
+                    final doc = docs[index];
+
+                    final task = Task.fromJson(
+                      doc.id,
+                      doc.data(),
+                    );
+
+                    return GestureDetector(
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (context) =>
+                                TaskDetailPage(task: task),
                           ),
-                        ),
-                      ],
-                    ),
-                  ),
+                        );
+                      },
+
+                      // 🔥 YOUR TASK CARD
+                      child: TaskCard(
+                        id: task.id,
+                        title: task.title,
+                        date: task.dueDate,
+                        isCompleted: task.isCompleted,
+                        priorityColor: task.color,
+                      ),
+                    );
+                  },
                 );
               },
             ),

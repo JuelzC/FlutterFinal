@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "71453756860",
+    "project_id": "taskapp-c385f",
+    "storage_bucket": "taskapp-c385f.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:71453756860:android:870003207931e78f41afb9",
+        "android_client_info": {
+          "package_name": "com.example.flutter_final"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCAGFyMApd0tX-X5zVh4qXQ45J1O2xS8Ro"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

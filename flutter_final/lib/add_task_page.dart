@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:flutter_final/task.dart';
-import 'home_page.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class AddTaskPage extends StatefulWidget {
   const AddTaskPage({super.key});
@@ -38,6 +37,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
           key: _formKey,
           child: ListView(
             children: [
+              // 🔹 TITLE
               TextFormField(
                 decoration: const InputDecoration(
                   labelText: 'Task Title',
@@ -52,7 +52,10 @@ class _AddTaskPageState extends State<AddTaskPage> {
                 },
                 onSaved: (value) => _title = value ?? '',
               ),
+
               const SizedBox(height: 20),
+
+              // 🔹 CATEGORY
               DropdownButtonFormField<String>(
                 value: _category,
                 decoration: const InputDecoration(
@@ -72,7 +75,10 @@ class _AddTaskPageState extends State<AddTaskPage> {
                   });
                 },
               ),
+
               const SizedBox(height: 20),
+
+              // 🔹 DUE DATE
               TextFormField(
                 decoration: const InputDecoration(
                   labelText: 'Due Date',
@@ -87,9 +93,10 @@ class _AddTaskPageState extends State<AddTaskPage> {
                 },
                 onSaved: (value) => _dueDate = value ?? '',
               ),
+
               const SizedBox(height: 20),
 
-              // Save Button
+              // 🔥 SAVE BUTTON (FIREBASE)
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.teal,
@@ -98,23 +105,30 @@ class _AddTaskPageState extends State<AddTaskPage> {
                     borderRadius: BorderRadius.circular(10),
                   ),
                 ),
-                onPressed: () {
+                onPressed: () async {
                   if (_formKey.currentState!.validate()) {
                     _formKey.currentState!.save();
 
-                    final newTask = Task(
-                      id: DateTime.now().millisecondsSinceEpoch, // Unique ID
-                      title: _title,
-                      category: _category,
-                      dueDate: _dueDate,
-                      priorityColor: Colors.teal, // You can make this dynamic later
-                      isCompleted: false,
-                    );
-                    ScaffoldMessenger.of(context).showSnackBar(
+                    // 🔥 SAVE TO FIRESTORE
+                    await FirebaseFirestore.instance
+                        .collection('tasks')
+                        .add({
+                      'title': _title,
+                      'category': _category,
+                      'dueDate': _dueDate,
+                      'priorityColor': Colors.teal.value,
+                      'isCompleted': false,
+                    });
 
-                      const SnackBar(content: Text('Task Saved Successfully!')),
+                    // ✅ SUCCESS MESSAGE
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(
+                        content: Text('Task Saved Successfully!'),
+                      ),
                     );
-                    Navigator.pop(context, newTask);
+
+                    // 🔙 GO BACK
+                    Navigator.pop(context);
                   }
                 },
                 child: const Text(

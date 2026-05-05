@@ -1,37 +1,49 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 
 class TaskCard extends StatelessWidget {
+  final String id;
   final String title;
   final String date;
+  final bool isCompleted;
   final Color priorityColor;
 
   const TaskCard({
     super.key,
+    required this.id,
     required this.title,
     required this.date,
+    required this.isCompleted,
     required this.priorityColor,
   });
 
   @override
   Widget build(BuildContext context) {
-    return Container(
-      margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
-      decoration: BoxDecoration(
-        color: Colors.white,
-        borderRadius: BorderRadius.circular(12),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(0.08),
-            blurRadius: 6,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
+    return Dismissible(
+      key: Key(id),
+
+      // 🔥 DELETE
+      onDismissed: (direction) {
+        FirebaseFirestore.instance.collection('tasks').doc(id).delete();
+      },
+
       child: Container(
+        margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
         padding: const EdgeInsets.all(16),
+        decoration: BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.circular(12),
+          boxShadow: [
+            BoxShadow(
+              color: Colors.black.withOpacity(0.08),
+              blurRadius: 6,
+              offset: const Offset(0, 3),
+            ),
+          ],
+        ),
         child: Row(
           children: [
-            // Priority color strip
+            // Priority bar
             Container(
               width: 4,
               height: 40,
@@ -44,16 +56,33 @@ class TaskCard extends StatelessWidget {
 
             const SizedBox(width: 12),
 
-            // Task title
+            // Title
             Expanded(
               child: Text(
                 title,
-                style: const TextStyle(fontSize: 18),
+                style: TextStyle(
+                  fontSize: 18,
+                  decoration:
+                  isCompleted ? TextDecoration.lineThrough : null,
+                ),
               ),
             ),
 
             // Date
             Text(date),
+
+            const SizedBox(width: 10),
+
+            // 🔥 COMPLETE
+            Checkbox(
+              value: isCompleted,
+              onChanged: (value) {
+                FirebaseFirestore.instance
+                    .collection('tasks')
+                    .doc(id)
+                    .update({'isCompleted': value});
+              },
+            ),
           ],
         ),
       ),

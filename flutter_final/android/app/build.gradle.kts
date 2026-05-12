@@ -21,7 +21,8 @@ android {
 
     defaultConfig {
         applicationId = "com.example.flutter_final"
-        minSdk = flutter.minSdkVersion   // IMPORTANT FIX for Firebase
+        // 🔥 Change from flutter.minSdkVersion to 21 for Firebase
+        minSdk = flutter.minSdkVersion
         targetSdk = flutter.targetSdkVersion
         versionCode = flutter.versionCode
         versionName = flutter.versionName

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class AddTaskPage extends StatefulWidget {
   const AddTaskPage({super.key});
@@ -30,6 +31,7 @@ class _AddTaskPageState extends State<AddTaskPage> {
       appBar: AppBar(
         title: const Text("Add New Task"),
         backgroundColor: Colors.teal,
+        foregroundColor: Colors.white,
       ),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
@@ -37,7 +39,6 @@ class _AddTaskPageState extends State<AddTaskPage> {
           key: _formKey,
           child: ListView(
             children: [
-              // 🔹 TITLE
               TextFormField(
                 decoration: const InputDecoration(
                   labelText: 'Task Title',
@@ -55,7 +56,6 @@ class _AddTaskPageState extends State<AddTaskPage> {
 
               const SizedBox(height: 20),
 
-              // 🔹 CATEGORY
               DropdownButtonFormField<String>(
                 value: _category,
                 decoration: const InputDecoration(
@@ -78,7 +78,6 @@ class _AddTaskPageState extends State<AddTaskPage> {
 
               const SizedBox(height: 20),
 
-              // 🔹 DUE DATE
               TextFormField(
                 decoration: const InputDecoration(
                   labelText: 'Due Date',
@@ -96,10 +95,10 @@ class _AddTaskPageState extends State<AddTaskPage> {
 
               const SizedBox(height: 20),
 
-              // 🔥 SAVE BUTTON (FIREBASE)
               ElevatedButton(
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.teal,
+                  foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 15),
                   shape: RoundedRectangleBorder(
                     borderRadius: BorderRadius.circular(10),
@@ -109,31 +108,41 @@ class _AddTaskPageState extends State<AddTaskPage> {
                   if (_formKey.currentState!.validate()) {
                     _formKey.currentState!.save();
 
-                    // 🔥 SAVE TO FIRESTORE
-                    await FirebaseFirestore.instance
-                        .collection('tasks')
-                        .add({
-                      'title': _title,
-                      'category': _category,
-                      'dueDate': _dueDate,
-                      'priorityColor': Colors.teal.value,
-                      'isCompleted': false,
-                    });
+                    final user = FirebaseAuth.instance.currentUser;
+                    if (user == null) return;
 
-                    // ✅ SUCCESS MESSAGE
-                    ScaffoldMessenger.of(context).showSnackBar(
-                      const SnackBar(
-                        content: Text('Task Saved Successfully!'),
-                      ),
-                    );
+                    try {
+                      await FirebaseFirestore.instance
+                          .collection('users')
+                          .doc(user.uid)
+                          .collection('tasks')
+                          .add({
+                        'title': _title,
+                        'category': _category,
+                        'dueDate': _dueDate,
+                        'priorityColor': Colors.teal.value,
+                        'isCompleted': false,
+                        'createdAt': FieldValue.serverTimestamp(),
+                      });
 
-                    // 🔙 GO BACK
-                    Navigator.pop(context);
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('Task Saved Successfully!')),
+                        );
+                        Navigator.pop(context);
+                      }
+                    } catch (e) {
+                      if (mounted) {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+                        );
+                      }
+                    }
                   }
                 },
                 child: const Text(
                   "Save Task",
-                  style: TextStyle(color: Colors.white, fontSize: 18),
+                  style: TextStyle(fontSize: 18),
                 ),
               ),
             ],

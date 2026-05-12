@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 import 'task.dart';
 import 'task_card.dart';
@@ -24,25 +25,34 @@ class _HomePageState extends State<HomePage> {
 
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+    final uid = user?.uid;
+
     return Scaffold(
       appBar: AppBar(
         title: const Text("TaskFlow"),
         backgroundColor: Colors.teal,
+        foregroundColor: Colors.white,
       ),
 
       drawer: Drawer(
         child: ListView(
           padding: EdgeInsets.zero,
           children: [
-            const DrawerHeader(
-              decoration: BoxDecoration(color: Colors.teal),
-              child: Text("TaskFlow"),
+            UserAccountsDrawerHeader(
+              decoration: const BoxDecoration(color: Colors.teal),
+              accountName: const Text("User"),
+              accountEmail: Text(user?.email ?? ""),
+              currentAccountPicture: const CircleAvatar(
+                backgroundColor: Colors.white,
+                child: Icon(Icons.person, color: Colors.teal, size: 40),
+              ),
             ),
             ListTile(
-              leading: const Icon(Icons.person_outline),
+              leading: const Icon(Icons.logout),
               title: const Text("Sign Out"),
-              onTap: () {
-                print("Signed out");
+              onTap: () async {
+                await FirebaseAuth.instance.signOut();
               },
             ),
           ],
@@ -58,12 +68,13 @@ class _HomePageState extends State<HomePage> {
             ),
           );
         },
+        backgroundColor: Colors.teal,
+        foregroundColor: Colors.white,
         child: const Icon(Icons.add),
       ),
 
       body: Column(
         children: [
-          // 🔹 Category chips (still UI only for now)
           SizedBox(
             height: 60,
             child: ListView(
@@ -89,63 +100,58 @@ class _HomePageState extends State<HomePage> {
             ),
           ),
 
-          // 🔥 FIREBASE STREAM START
           Expanded(
-            child: StreamBuilder(
-              stream: FirebaseFirestore.instance
-                  .collection('tasks')
-                  .snapshots(),
-              builder: (context, snapshot) {
-                if (!snapshot.hasData) {
-                  return const Center(
-                    child: CircularProgressIndicator(),
+            child: uid == null 
+              ? const Center(child: Text("User not found"))
+              : StreamBuilder<QuerySnapshot<Map<String, dynamic>>>(
+                stream: FirebaseFirestore.instance
+                    .collection('users')
+                    .doc(uid)
+                    .collection('tasks')
+                    .orderBy('createdAt', descending: true)
+                    .snapshots(),
+                builder: (context, snapshot) {
+                  if (snapshot.hasError) {
+                    return Center(child: Text("Error: ${snapshot.error}"));
+                  }
+                  if (snapshot.connectionState == ConnectionState.waiting) {
+                    return const Center(child: CircularProgressIndicator());
+                  }
+
+                  final docs = snapshot.data!.docs;
+
+                  if (docs.isEmpty) {
+                    return const Center(child: Text("No tasks yet"));
+                  }
+
+                  return ListView.separated(
+                    itemCount: docs.length,
+                    separatorBuilder: (context, index) => const Divider(height: 1),
+                    itemBuilder: (context, index) {
+                      final doc = docs[index];
+                      final task = Task.fromJson(doc.id, doc.data());
+
+                      return GestureDetector(
+                        onTap: () {
+                          Navigator.push(
+                            context,
+                            MaterialPageRoute(
+                              builder: (context) => TaskDetailPage(task: task),
+                            ),
+                          );
+                        },
+                        child: TaskCard(
+                          id: task.id,
+                          title: task.title,
+                          date: task.dueDate,
+                          isCompleted: task.isCompleted,
+                          priorityColor: task.color,
+                        ),
+                      );
+                    },
                   );
-                }
-
-                final docs = snapshot.data!.docs;
-
-                if (docs.isEmpty) {
-                  return const Center(
-                    child: Text("No tasks yet"),
-                  );
-                }
-
-                return ListView.separated(
-                  itemCount: docs.length,
-                  separatorBuilder: (context, index) =>
-                  const Divider(height: 0),
-                  itemBuilder: (context, index) {
-                    final doc = docs[index];
-
-                    final task = Task.fromJson(
-                      doc.id,
-                      doc.data(),
-                    );
-
-                    return GestureDetector(
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (context) =>
-                                TaskDetailPage(task: task),
-                          ),
-                        );
-                      },
-
-                      // 🔥 YOUR TASK CARD
-                      child: TaskCard(
-                        id: task.id,
-                        title: task.title,
-                        date: task.dueDate,
-                        isCompleted: task.isCompleted,
-                        priorityColor: task.color,
-                      ),
-                    );
-                  },
-                );
-              },
-            ),
+                },
+              ),
           ),
         ],
       ),
@@ -153,6 +159,7 @@ class _HomePageState extends State<HomePage> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
+        selectedItemColor: Colors.teal,
         items: const [
           BottomNavigationBarItem(
             label: "Tasks",

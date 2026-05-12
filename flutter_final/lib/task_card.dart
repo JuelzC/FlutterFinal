@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 
 class TaskCard extends StatelessWidget {
   final String id;
@@ -19,12 +20,21 @@ class TaskCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final uid = FirebaseAuth.instance.currentUser?.uid;
+
     return Dismissible(
       key: Key(id),
 
       // 🔥 DELETE
       onDismissed: (direction) {
-        FirebaseFirestore.instance.collection('tasks').doc(id).delete();
+        if (uid != null) {
+          FirebaseFirestore.instance
+              .collection('users')
+              .doc(uid)
+              .collection('tasks')
+              .doc(id)
+              .delete();
+        }
       },
 
       child: Container(
@@ -62,8 +72,8 @@ class TaskCard extends StatelessWidget {
                 title,
                 style: TextStyle(
                   fontSize: 18,
-                  decoration:
-                  isCompleted ? TextDecoration.lineThrough : null,
+                  decoration: isCompleted ? TextDecoration.lineThrough : null,
+                  color: isCompleted ? Colors.grey : Colors.black,
                 ),
               ),
             ),
@@ -76,11 +86,16 @@ class TaskCard extends StatelessWidget {
             // 🔥 COMPLETE
             Checkbox(
               value: isCompleted,
+              activeColor: Colors.teal,
               onChanged: (value) {
-                FirebaseFirestore.instance
-                    .collection('tasks')
-                    .doc(id)
-                    .update({'isCompleted': value});
+                if (uid != null) {
+                  FirebaseFirestore.instance
+                      .collection('users')
+                      .doc(uid)
+                      .collection('tasks')
+                      .doc(id)
+                      .update({'isCompleted': value});
+                }
               },
             ),
           ],
